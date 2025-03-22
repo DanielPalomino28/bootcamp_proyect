@@ -1,16 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detector de Spam</title>
+    <title>Clasificación de Datos</title>
 </head>
 <body>
-    <h2>Ingrese el texto a clasificar</h2>
+    <h1>Clasificación de Datos</h1>
     <form action="/" method="post">
-        <textarea name="textToClasify" rows="5" cols="40"></textarea>
-        <br>
-        <input type="submit" value="Clasificar">
+        {% for col in columns %}
+        <label for="{{ col }}">{{ col }}</label>
+        <input type="text" id="{{ col }}" name="{{ col }}" required><br>
+        {% endfor %}
+        <button type="submit">Clasificar</button>
     </form>
 </body>
 </html>
