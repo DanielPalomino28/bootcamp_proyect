@@ -1,16 +1,65 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
-    <title>Clasificación de Datos</title>
+  <meta charset="UTF-8">
+  <title>Predicción de Tipo de Contrato</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body { background-color: #f7f7f7; }
+    .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
+    h1 { color: #333; }
+    footer { margin-top: 40px; text-align: center; color: #777; }
+  </style>
 </head>
 <body>
-    <h1>Clasificación de Datos</h1>
-    <form action="/" method="post">
-        {% for col in columns %}
-        <label for="{{ col }}">{{ col }}</label>
-        <input type="text" id="{{ col }}" name="{{ col }}" required><br>
+<div class="container mt-5">
+  <h1 class="mb-4">Predicción de Tipo de Contrato</h1>
+  <form method="POST">
+    <div class="form-group">
+      <label for="Medio_Empleo_Obtenido">Medio en que obtuvo su empleo</label>
+      <select class="form-control" name="Medio_Empleo_Obtenido" id="Medio_Empleo_Obtenido" required>
+        {% for key, value in medios_empleo.items() %}
+        <option value="{{ key }}">{{ value }}</option>
         {% endfor %}
-        <button type="submit">Clasificar</button>
-    </form>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="Misma_Empresa">¿Fue contratado en la misma empresa donde trabaja?</label>
+      <select class="form-control" name="Misma_Empresa" id="Misma_Empresa" required>
+        {% for key, value in misma_empresa.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="Tipo_Empresa_Contratante">Tipo de empresa que lo contrató</label>
+      <select class="form-control" name="Tipo_Empresa_Contratante" id="Tipo_Empresa_Contratante" required>
+        {% for key, value in tipo_empresa.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="Empresa_Registrada">¿La empresa está registrada?</label>
+      <select class="form-control" name="Empresa_Registrada" id="Empresa_Registrada" required>
+        {% for key, value in empresa_registrada.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="Cuenta_Contador">¿Cuenta con servicios de contador?</label>
+      <select class="form-control" name="Cuenta_Contador" id="Cuenta_Contador" required>
+        {% for key, value in cuenta_contador.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Predecir</button>
+  </form>
+  <footer>
+    <small><em> © Bootcamp de Inteligencia Artificial, nivel explorador | Equipo: Daniel * 3 + Juan * 2 </em></small>
+  </footer>
+</div>
 </body>
 </html>

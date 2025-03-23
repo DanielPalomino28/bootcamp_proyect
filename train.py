@@ -4,9 +4,10 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 import joblib
 import os
+import numpy as np
 
 # Carga del dataset preparado
-file_path = r"C:\Users\DRA01\Downloads\data_prepared.csv"
+file_path = r"C:\Users\danie\Documents\Bootcamp\data_prepared.csv"
 df = pd.read_csv(file_path, low_memory=False)
 print("✅ Archivo cargado correctamente.")
 
@@ -42,11 +43,32 @@ rename_dict = {
 df = df.rename(columns=rename_dict)
 print("🔹 Columnas renombradas según su descripción.")
 
-# Definir la variable objetivo y las características
-target = 'Tipo_Contrato'  # P6450: Tipo de contrato (verbal vs. escrito)
-if target not in df.columns:
-    raise ValueError(f"La variable objetivo {target} no se encuentra en el DataFrame.")
+# Preprocesamiento de las características:
+# Convertir todas las columnas de características a valores numéricos.
+# Si la mayoría de los datos de una columna pueden convertirse, se hace la conversión;
+# de lo contrario se codifica la columna (factorize) para asignarle un código numérico.
+# Este proceso se aplica a todas las columnas excepto la variable objetivo.
+target = 'Tipo_Contrato'  # Variable objetivo (P6450)
+features = df.drop(columns=[target]).columns
 
+for col in features:
+    if df[col].dtype == 'object':
+        # Reemplazar valores '.' por NaN
+        temp = df[col].replace('.', np.nan)
+        # Intentar convertir a numérico
+        temp_numeric = pd.to_numeric(temp, errors='coerce')
+        # Si más del 50% de los valores se pueden convertir, lo usamos
+        if temp_numeric.notnull().sum() > 0.5 * len(temp_numeric):
+            df[col] = temp_numeric.fillna(temp_numeric.median())
+        else:
+            # Sino, tratamos la columna como categórica y la codificamos
+            df[col] = pd.factorize(df[col])[0]
+
+# Si la variable objetivo también es de tipo objeto, convertirla a numérico
+if df[target].dtype == 'object':
+    df[target] = pd.factorize(df[target])[0]
+
+# Dividir datos en características (X) y variable objetivo (y)
 X = df.drop(columns=[target])
 y = df[target]
 
