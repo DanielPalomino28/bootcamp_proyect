@@ -1,3 +1,4 @@
+#Dependencies: pandas, os, train_test_split, DecisionTreeClassifier, accuracy_score, joblib
 import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
@@ -5,7 +6,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 import joblib
 
-# Ruta del dataset preparado (asegúrate de que el archivo exista y esté actualizado)
+# Ruta del dataset preparado
 file_path = r"C:\Users\danie\Documents\Bootcamp\data_prepared_renamed.csv"
 df = pd.read_csv(file_path, low_memory=False)
 print("✅ Archivo cargado correctamente.")
@@ -33,9 +34,9 @@ model = DecisionTreeClassifier(random_state=42)
 model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
-print(f"🌳 Modelo simplificado entrenado. Precisión: {accuracy:.2f}")
+print(f"🌳 Modelo entrenado. Precisión: {accuracy:.2f}")
 
 # Guardar el modelo simplificado en la misma carpeta que el dataset
 output_path = os.path.join(os.path.dirname(file_path), "simplified_decision_tree_model.pkl")
 joblib.dump(model, output_path)
-print(f"✅ Modelo simplificado guardado como: {output_path}")
+print(f"✅ Modelo guardado como: {output_path}")

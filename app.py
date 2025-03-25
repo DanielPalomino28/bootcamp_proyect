@@ -57,7 +57,8 @@ def index():
         input_df = pd.DataFrame([input_data])
         # Hacer la predicción
         prediction_code = model.predict(input_df)[0]
-        prediction_label = tipo_contrato_mapping.get(prediction_code, "Desconocido")
+        prediction_label = tipo_contrato_mapping.get(prediction_code, "Desconocido. (Código: {prediction_code})")
+        # Mostrar el resultado
         return render_template("result.html", prediction=prediction_label)
     return render_template("index.html",
                            medios_empleo=medios_empleo,
