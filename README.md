@@ -37,7 +37,7 @@ Este proyecto desarrolla una aplicación web sencilla y elegante utilizando Flas
 
 1️⃣ **Clonar el repositorio**  
 ```bash
-git clone https://github.com/tu_usuario/proyecto-prediccion-contrato.git
+git clone https://github.com/DanielPalomino28/bootcamp_proyect.git
 ```
 
 2️⃣ **Instalar dependencias**  
@@ -76,15 +76,6 @@ El modelo fue ajustado y solo utiliza las variables más importantes:
 - **Tipo de empresa que contrató** (Pública, Privada, Mixta, Otra)
 - **Si la empresa está registrada** (Sí/No)
 - **Si cuenta con un contador** (Sí/No)
-
----
-
-### 🎨 **Diseño**
-La interfaz está diseñada con **Bootstrap 4** para ofrecer una experiencia moderna y sencilla.  
-✔️ **Formulario claro y organizado**  
-✔️ **Selectores que evitan errores de entrada**  
-✔️ **Resultados presentados de forma amigable**  
-✔️ **Footer con los créditos del equipo**  
 
 ---
 
