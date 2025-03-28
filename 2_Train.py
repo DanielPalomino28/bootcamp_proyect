@@ -11,10 +11,6 @@ file_path = r"C:\Users\danie\Documents\Bootcamp\data_prepared.csv"
 df = pd.read_csv(file_path, low_memory=False)
 print("✅ Archivo cargado correctamente.")
 
-# Eliminar columnas innecesarias
-cols_to_drop = ['PERIODO', 'MES', 'PER', 'FEX_C18', 'P3044S2', 'P6420S2']
-df = df.drop(columns=cols_to_drop, errors='ignore')
-
 # Renombrar columnas
 rename_dict = {
     'P6400': 'Misma_Empresa',
@@ -45,8 +41,8 @@ if df['Tipo_Contrato'].dtype == 'object':
 X_train, X_test, y_train, y_test = train_test_split(df[selected_features], df['Tipo_Contrato'], 
                                                     test_size=0.2, random_state=42)
 
-# Definir modelo Random Forest
-rf_model = RandomForestClassifier(random_state=42)
+# Definir modelo Random Forest con class_weight="balanced"
+rf_model = RandomForestClassifier(random_state=42, class_weight="balanced")
 rf_model.fit(X_train, y_train)
 
 # Validación cruzada
@@ -58,11 +54,26 @@ y_pred = rf_model.predict(X_test)
 test_accuracy = accuracy_score(y_test, y_pred)
 print(f"📌 Precisión en test: {test_accuracy:.2f}")
 
-# Crear la carpeta "models" si no existe
+# Ajuste de hiperparámetros con GridSearchCV
+param_grid = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [10, 20, None],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4]
+}
+grid_search = GridSearchCV(RandomForestClassifier(random_state=42, class_weight="balanced"), 
+                            param_grid, cv=5, scoring='accuracy', n_jobs=-1)
+grid_search.fit(X_train, y_train)
+print(f"✅ Mejor modelo encontrado: {grid_search.best_params_}")
+
+# Evaluación del mejor modelo
+y_pred_best = grid_search.best_estimator_.predict(X_test)
+best_test_accuracy = accuracy_score(y_test, y_pred_best)
+print(f"📌 Precisión del mejor modelo en test: {best_test_accuracy:.2f}")
+
+# Guardar el mejor modelo en la carpeta "models"
 models_dir = os.path.join(os.getcwd(), "models")
 os.makedirs(models_dir, exist_ok=True)
-
-# Guardar el modelo en la carpeta "models"
 model_path = os.path.join(models_dir, "best_random_forest.pkl")
-joblib.dump(rf_model, model_path)
-print(f"✅ Modelo guardado en: {model_path}")
+joblib.dump(grid_search.best_estimator_, model_path)
+print(f"✅ Modelo optimizado guardado en: {model_path}")
