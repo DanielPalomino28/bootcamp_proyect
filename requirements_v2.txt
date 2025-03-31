@@ -1,0 +1,9 @@
+Flask==3.0.3  # Framework para crear aplicaciones web; útil para construir la API del proyecto.
+joblib==1.4.2  # Biblioteca para serialización de objetos; se usa para guardar y cargar modelos entrenados.
+numpy==2.0.2  # Biblioteca para cálculos numéricos; se utiliza para manejar arreglos y realizar operaciones matemáticas.
+requests==2.32.3  # Biblioteca para realizar solicitudes HTTP; se usa para consumir APIs externas.
+sklearn==0.0  # Biblioteca para aprendizaje automático; se utiliza para entrenar y evaluar modelos.
+pandas  # Biblioteca para manipulación y análisis de datos; se usa para manejar datasets tabulares.
+matplotlib  # Biblioteca para visualización de datos; se utiliza para crear gráficos y visualizaciones.
+numpy  # Biblioteca para cálculos numéricos; se utiliza para manejar arreglos y realizar operaciones matemáticas (duplicado, puede eliminarse).
+seaborn  # Biblioteca para visualización de datos estadísticos; se usa para gráficos más avanzados y estilizados.

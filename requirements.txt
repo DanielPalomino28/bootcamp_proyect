@@ -12,3 +12,4 @@ matplotlib
 numpy
 catboost
 imblearn
+seaborn==0.13.2
