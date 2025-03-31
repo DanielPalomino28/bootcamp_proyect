@@ -319,11 +319,14 @@ def generar_graficos():
         """
         print("Generando gráficos exploratorios con el DataFrame procesado...")
     
+        # Mapa de calor de correlaciones filtrado a las 15 variables con mayor correlación promedio absoluta
         num_cols = df.select_dtypes(include=['float64', 'int64']).columns
         corr_matrix = df[num_cols].corr()
-        plt.figure(figsize=(14, 12))
-        sns.heatmap(corr_matrix, annot=False, cmap='coolwarm')
-        plt.title("Mapa de Calor de Correlaciones")
+        mean_corr = corr_matrix.abs().mean().sort_values(ascending=False)
+        top15_cols = mean_corr.head(15).index
+        plt.figure(figsize=(12, 10))
+        sns.heatmap(corr_matrix.loc[top15_cols, top15_cols], annot=True, cmap='coolwarm', vmin=-1, vmax=1)
+        plt.title("Mapa de Calor de Correlaciones (Top 15 variables con mayor correlación promedio)")
         plt.show()
         
         # Diagrama de dispersión: Salario vs. Horas Semanales de Trabajo, coloreando por Recibe_Subsidio
