@@ -54,22 +54,38 @@ def view_column_values(df):
         print("Columna no encontrada.")
 
 
-def guardar_df_procesado(df, src_datos):
+def guardar_df_procesado(df):
     # Guarda el DataFrame modificado en la misma ruta donde se encuentra el archivo original      
-    df.to_csv(src_datos, index=False)
-    print(f"DataFrame guardado en: {src_datos}")
+    df.to_csv(src_datos_procesados, index=False)
+    print(f"DataFrame guardado en: {src_datos_procesados}")
+
+def validar_rangos_originales(df, columnas_info):
+    """
+    Para cada columna en el diccionario (con nombre original),
+    reemplaza con NaN los valores que no estén en el rango [min, max].
+    """
+    for col, info in columnas_info.items():
+        if col in df.columns and type(col) != str:
+            min_val = info["min"]
+            max_val = info["max"]
+            df[col] = df[col].apply(lambda x: x if pd.isnull(x) or (min_val <= x <= max_val) else np.nan)
+    return df
 
 def procesar_df(df):
     """
-    Aplica las transformaciones avanzadas al DataFrame según lo solicitado:
-      0. Elimina columnas redundantes definidas en la lista (para no tener información ya optimizada).
-      1. Compara las columnas P6440 y P6450 y elimina la que tenga más valores nulos.
-      2. Consolida información de registro formal y de subsidios y elimina las columnas originales.
-      3. Recodifica las respuestas "no sabe/no responde" (valor 9) a NaN en columnas numéricas y agrega
-         una columna con el conteo de celdas vacías.
-      4. Elimina filas con más de 100 celdas vacías.
+    Aplica las transformaciones avanzadas al DataFrame:
+      0. Elimina columnas redundantes.
+      1. Compara P6440 y P6450 y elimina la que tenga más valores nulos.
+      2. Consolida la información de registro formal en 'empresa_formal' y la de subsidios en 'Recibe_Subsidio'.
+      3. Recodifica respuestas 'no sabe/no responde' (valor 9) a NaN.
+      4. Elimina filas con demasiadas celdas vacías.
+      5. Consolida la información salarial en la columna 'Salario'.
+      6. Valida rangos originales de las columnas y reemplaza valores fuera de rango por NaN.
+      7. Imputa los valores nulos y realiza ajustes adicionales.
+      8. Renombra columnas para facilitar el análisis.
+      9. Guarda el DataFrame procesado en la misma ruta donde se encuentra el archivo original.
     """
-    # 0. Eliminar columnas con demasiados campos vacios o 
+    # 0. Eliminar columnas con demasiados campos vacios o no útiles.
     drop_columns_initial = [
         "P6410", "P6420S2", "P6430S1", "P3364S1", "P6590S1", "P6600", "P6600S1", "P6610S1", "P6610", "P6585S3A1", 
         "P6585S3A2", "P6545S1", "P6545S2", "P6765S1", "P3051", "P3051S1", "P3055S1", "P3056", "P3057","P6760", 
@@ -89,9 +105,58 @@ def procesar_df(df):
     df.drop(columns=[col for col in drop_columns_initial if col in df.columns], inplace=True)
     print(f"Se eliminaron {len(drop_columns_initial)} columnas redundantes al inicio.")
     
+    '''
+    0.1 Diccionario extendido: 
+        clave = nombre original, 
+        valor = dict con nuevo nombre, 
+        mínimo y máximo permitidos.
+    '''
+    columnas_info = {
+        "P3046": {"nuevo_nombre": "Tiene_Contador", "min": 1, "max": 2},
+        "P3363": {"nuevo_nombre": "Medio_Conseguido_Empleo", "min": 1, "max": 6},
+        "P3364": {"nuevo_nombre": "Le_Descontaron_Retencion", "min": 1, "max": 2},
+        "P6400": {"nuevo_nombre": "Misma_Empresa_Contratante", "min": 1, "max": 2},
+        "P6450": {"nuevo_nombre": "Contrato_Verbal_Escrito", "min": 1, "max": 2},
+        "P6460": {"nuevo_nombre": "Contrato_Termino", "min": 1, "max": 2},
+        "P6920": {"nuevo_nombre": "Cotiza_Pension", "min": 1, "max": 3},
+        "P6990": {"nuevo_nombre": "Afiliado_ARP", "min": 1, "max": 2},
+        "P9450": {"nuevo_nombre": "Afiliado_Caja_Compensacion", "min": 1, "max": 2},
+        "P1800": {"nuevo_nombre": "Tiene_Empleados", "min": 1, "max": 2},
+        "P1881": {"nuevo_nombre": "Medio_Transporte_Trabajo", "min": 1, "max": 14},
+        "P1882": {"nuevo_nombre": "Tiempo_Desplazamiento_Trabajo", "min": 0, "max": 300},
+        "P3047": {"nuevo_nombre": "Quien_Decide_Horario", "min": 1, "max": 4},
+        "P3048": {"nuevo_nombre": "Quien_Decide_Produccion", "min": 1, "max": 4},
+        "P3049": {"nuevo_nombre": "Quien_Decide_Precio", "min": 1, "max": 4},
+        "P3069": {"nuevo_nombre": "Total_Empleados_Empresa", "min": 1, "max": 10},
+        "P6422": {"nuevo_nombre": "Conforme_Tipo_Contrato", "min": 1, "max": 2},
+        "P6424S1": {"nuevo_nombre": "Vacaciones_Con_Sueldo", "min": 1, "max": 2},
+        "P6424S2": {"nuevo_nombre": "Prima_Navidad", "min": 1, "max": 2},
+        "P6424S3": {"nuevo_nombre": "Derecho_Cesantia", "min": 1, "max": 2},
+        "P6424S5": {"nuevo_nombre": "Licencia_Enfermedad_Pagada", "min": 1, "max": 2},
+        "P6426": {"nuevo_nombre": "Tiempo_Trabajo_Empresa", "min": 0, "max": 720},
+        "P6430": {"nuevo_nombre": "Tipo_Trabajo", "min": 1, "max": 9},
+        "P6630S1": {"nuevo_nombre": "Prima_Servicios", "min": 1, "max": 2},
+        "P6630S2": {"nuevo_nombre": "Prima_Navidad_2", "min": 1, "max": 2},
+        "P6630S3": {"nuevo_nombre": "Prima_Vacaciones", "min": 1, "max": 2},
+        "P6630S6": {"nuevo_nombre": "Pagos_Accidentes", "min": 1, "max": 2},
+        "P6800": {"nuevo_nombre": "Horas_Semanales_Trabajo", "min": 1, "max": 126},
+        "P6880": {"nuevo_nombre": "Lugar_Principal_Trabajo", "min": 1, "max": 11},
+        "P6915": {"nuevo_nombre": "Cubrir_Costos_Enfermedad", "min": 1, "max": 12},
+        "P6930": {"nuevo_nombre": "Fondo_Afiliado", "min": 1, "max": 4},
+        "P6940": {"nuevo_nombre": "Quien_Paga_Pension", "min": 1, "max": 4},
+        "P7020": {"nuevo_nombre": "Tuvo_Trabajo_Anterior", "min": 1, "max": 2},
+        "P7130": {"nuevo_nombre": "Desea_Cambiar_Trabajo", "min": 1, "max": 2},
+        "P7170S6": {"nuevo_nombre": "Satisfaccion_Jornada_Laboral", "min": 1, "max": 2},
+        "P7240": {"nuevo_nombre": "Fuente_Ingresos_Sin_Trabajo", "min": 1, "max": 10},
+        "P760": {"nuevo_nombre": "Meses_Sin_Empleo", "min": 0, "max": 99},
+        "P9440": {"nuevo_nombre": "Consiguio_Empleo_Internet", "min": 1, "max": 2}
+    }
 
-    '''1. Comparar ¿para realizar este trabajo, tiene usted algún tipo de contrato? (P6440)
-         y ¿el contrato es verbal o escrito? (P6450), eliminando la columna que tenga más nulos.'''
+
+    '''1. Comparar:
+        -¿para realizar este trabajo, tiene usted algún tipo de contrato? (P6440)
+        -¿el contrato es verbal o escrito? (P6450), 
+        eliminando la columna que tenga más nulos.'''
     if "P6440" in df.columns and "P6450" in df.columns:
         nulos_p6440 = df["P6440"].isnull().sum() + (df["P6440"] == "").sum()
         nulos_p6450 = df["P6450"].isnull().sum() + (df["P6450"] == "").sum()
@@ -104,32 +169,36 @@ def procesar_df(df):
     else:
         print("No se encontraron ambas columnas P6440 y P6450 para comparar.")
 
-    # 2. Consolidar información de registro formal y de subsidios.
-        '''Columnas para Registro formal: 
-            La empresa o negocio en la que ... realiza su trabajo ¿está registrada ante la cámara de comercio? (¿tiene registro mercantil?) (P3066)
-            La empresa, negocio o institución en la que ….. trabaja ¿está registrada o tiene: (P3045S1)
-            La empresa, negocio o institución en la que ….. trabaja ¿está registrada o tiene: (P3045S2)
-            La empresa, negocio o institución en la que ….. trabaja ¿está registrada o tiene: (P3045S3)
-            La empresa o negocio en la que ... realiza su trabajo ¿está registrada ante la cámara de comercio? (¿tiene registro mercantil?) (P3065)'''
+    '''
+    2.1 Consolidar información de registro formal en 'empresa_formal'
+    Columnas para Registro formal: 
+        La empresa o negocio en la que ... realiza su trabajo ¿está registrada ante la cámara de comercio? (¿tiene registro mercantil?) (P3066)
+        La empresa, negocio o institución en la que trabaja está registrada o tiene Cámara de comercio(P3045S1)
+        La empresa, negocio o institución en la que trabaja está registrada o tiene Rut (P3045S2)
+        La empresa, negocio o institución en la que trabaja está registrada o tiene Personería Jurídica (P3045S3)
+        La empresa o negocio en la que ... realiza su trabajo ¿está registrada ante la cámara de comercio? (¿tiene registro mercantil?) (P3065)
+    '''
 
     registro_cols = ["P3045S1", "P3045S2", "P3045S3", "P3065", "P3066"]
     cols_existentes_reg = [col for col in registro_cols if col in df.columns]
     if cols_existentes_reg:
-        # Se asume 1 = afirmativo.
-        df["Empresa_Registrada"] = df[cols_existentes_reg].apply(
+        #1 = afirmativo.
+        df["empresa_formal"] = df[cols_existentes_reg].apply(
             lambda row: any(x == 1 for x in row if pd.notnull(x)), axis=1
         ).astype(int)
-        print("Se consolidó la columna Empresa_Registrada.")
+        print("Se consolidó la columna empresa_formal.")
         # Eliminar las columnas originales usadas para la consolidación.
         df.drop(columns=cols_existentes_reg, inplace=True)
     else:
-        print("No se encontraron columnas para consolidar Empresa_Registrada.")
+        print("No se encontraron columnas para consolidar 'empresa_formal'.")
 
-    '''Columnas para Subsidios: 
-            Auxilio o subsidio de alimentación? (P6585S1)
-            Auxilio o subsidio de transporte? (P6585S2)
-            Subsidio familiar? (P6585S3)
-            Subsidio educativo? (P6585S4)
+    '''
+    2.2Consolidar información de subsidios en 'Recibe_Subsidio'
+    Columnas para Subsidios: 
+        Auxilio o subsidio de alimentación? (P6585S1)
+        Auxilio o subsidio de transporte? (P6585S2)
+        Subsidio familiar? (P6585S3)
+        Subsidio educativo? (P6585S4)
     '''
     subsidio_cols = ["P6585S1", "P6585S2", "P6585S3", "P6585S4"]
     cols_existentes_sub = [col for col in subsidio_cols if col in df.columns]
@@ -148,16 +217,17 @@ def procesar_df(df):
     # 3. Recodificar respuestas "no sabe/no responde": valor 9 se reemplaza por NaN.
     # Dado que las respuestas son numéricas (1, 2, 9) o pueden estar vacías.
     for col in df.columns:
-        if pd.api.types.is_numeric_dtype(df[col]):
-            df[col] = df[col].replace(9, np.nan)
-        else:
-            try:
-                df[col] = pd.to_numeric(df[col], errors='coerce').replace(9, np.nan)
-            except Exception as e:
-                pass
+        if col not in ["P6430", "P1881"]: #No se tienen en cuenta las columnas P6430 y P1881, ya que no se requiere recodificación y son categóricas.
+            if pd.api.types.is_numeric_dtype(df[col]):
+                df[col] = df[col].replace(9, np.nan)
+            else:
+                try:
+                    df[col] = pd.to_numeric(df[col], errors='coerce').replace(9, np.nan)
+                except Exception as e:
+                    pass
 
     # 4. Eliminar filas con más de max_vacias celdas vacías (NaN, cadenas vacías o ".").
-    max_vacias = 60
+    max_vacias = 50 # Número máximo de celdas vacías permitidas por fila. (la mitad del total de columnas en este punto del df)
     empties = df.apply(lambda row: sum(pd.isnull(x) or (isinstance(x, str) and x.strip() in ["", "."]) for x in row), axis=1)
     filas_con_muchos_vacios = empties[empties > max_vacias].index
     if len(filas_con_muchos_vacios) > 0:
@@ -165,36 +235,52 @@ def procesar_df(df):
         print(f"Se eliminaron {len(filas_con_muchos_vacios)} registros con más de {max_vacias} celdas vacías.")
     else:
         print(f"No se encontraron registros con más de {max_vacias} celdas vacías.") 
-
-    # Agregar columna con el salario mayor entre las columnas siguientes columnas (en caso de no exista alguno de los dos registros, se crea un NaN.)
-    '''Ingresos laborales (INGLABO)
+    
+    '''
+    5. Consolidar la información salarial en la columna 'Salario'
+        Ingresos laborales (INGLABO)
         ¿cuál fue la ganancia neta o los honorarios netos de ... Esa actividad, negocio, profesión o finca, el mes pasado? (P6750)
         Antes de descuentos ¿cuánto ganó ... El mes pasado en este empleo? (P6500)
+        Nota: se toma la máxima de las tres columnas, ya que puede darse el caso en que entre encuestas la persona haya recibido un aumento
     ''' 
     if "INGLABO" in df.columns and "P6500" in df.columns and "P6750" in df.columns:
-        df["Salario"] = df[["INGLABO", "P6500","P6750"]].apply(
-            lambda row: np.nan if row.isnull().all() or (row == "").all() else row.max(), axis=1
+        df["Salario"] = df[["INGLABO", "P6500", "P6750"]].apply(
+            lambda row: np.nan if row.isnull().all() or (row == "").all() or row.max() < 3 else row.max(), axis=1 #Se agrega condición (row.max() < 3) para evitar que se tomen valores como 1.0 o 2.0.
         )
         df.drop(columns=["INGLABO","P6500","P6750"], inplace=True)
         print("Se agregó la columna 'Salario' y se eliminaron las columnas 'INGLABO' y 'P6500'.") #Se eliminan las columnas INGLABO y P6500, ya que se consolidó la información en Salario_Mayor.         
     else:
-        print("No se encontraron columnas INGLABO, P6750 o P6500 para calcular la columna Salario.")
+        print("No se encontraron columnas INGLABO, P6750 y/o P6500 para calcular la columna Salario.")
 
 
+    '''
+    6. Validar rangos originales de las columnas y reemplazar valores fuera de rango por NaN.
+        Se usa el diccionario 'columnas_info' para validar los rangos originales.
+    '''
+    df = validar_rangos_originales(df, columnas_info)
+    print("Se validaron los rangos originales de las columnas y se reemplazaron los valores fuera de rango por NaN.")
     #reemplazar valores vacíos por NaN para porteriormente hacer la imputación de los nulos.
     df.replace(["", ".", " "], np.nan, inplace=True)
 
+    '''
+     # 7. Imputación de nulos y ajustes adicionales
+        Rellenar celdas vacías en 
+    '''
     print("Inició la imputación de los nulos.")
 
-    ''' Rellenar celdas vacías en 
-        En ese trabajo, ¿tiene empleados o personas que le ayudan en su negocio o actividad? (P1800) con 2.0 que corresponde a "No tiene empleados".'
+    '''
+    7.1 Rellenar celdas vacías en la pregunta:
+        En ese trabajo, ¿tiene empleados o personas que le ayudan en su negocio o actividad? (P1800) 
+        con 2.0 que corresponde a "No tiene empleados".'
     '''
     if "P1800" in df.columns:
         df["P1800"].fillna(2.0, inplace=True)
 
 
     
-    ''' Rellenar celdas vacías en ¿cuántos? (P1800S1)
+    ''' 
+    7.2 Rellenar celdas vacías en la pregunta:
+        ¿cuántos? (P1800S1)
         con 0.0 que corresponde a "No tiene empleados" de P1800.        
     '''
     if "P1800S1" in df.columns:
@@ -203,6 +289,7 @@ def procesar_df(df):
 
     # Si P7020 == 2.0, entonces P760 debe ser 0.0
     ''' 
+    7.3 Rellenar celdas vacías en la pregunta:
         Antes del actual trabajo, ¿... Tuvo otro trabajo? (P7020)
         ¿cuántos meses estuvo sin empleo o trabajo ... Entre el trabajo actual y el anterior? (P760)        
     '''    
@@ -212,8 +299,10 @@ def procesar_df(df):
 
     # Si P1881 == 14.0, entonces P1882 debe ser 0.0
     ''' 
-    ¿Qué medio de transporte utiliza principalmente para desplazarse a su sitio de trabajo? (P1881) - 14 es "No se desplaza"
-    ¿Cuánto tiempo se demora regularmente ... en su desplazamiento hacia el trabajo? (Incluya tiempo de espera del medio de transporte) (P1882)
+    7.4 Rellenar celdas vacías a partir de la pregunta:
+        ¿Qué medio de transporte utiliza principalmente para desplazarse a su sitio de trabajo? (P1881) - 14 es "No se desplaza"
+     Se realiza ajuste en:
+        ¿Cuánto tiempo se demora regularmente ... en su desplazamiento hacia el trabajo? (Incluya tiempo de espera del medio de transporte) (P1882)
     '''    
     if "P1881" in df.columns and "P1882" in df.columns:
         df.loc[df["P1881"] == 14.0, "P1882"] = 0.0
@@ -256,54 +345,21 @@ def procesar_df(df):
         df[cat_cols] = df[cat_cols].fillna(mode_values.iloc[0])
         print(f"🔹 Campos categóricos vacíos rellenados con la moda.")
     else:
-        print(f"⚠️ No se pudo calcular la moda para las columnas categóricas.")
+        print(f"⚠️ No se encontraron columnas tipo object en el DF para rellenar con la moda.")
 
 
     #Ordenar los datos de manera aleatoria para evitar sesgos en el análisis posterior.
     df = df.sample(frac=1, random_state=42).reset_index(drop=True)
 
-    # Renombrar columnas luego de la limpieza y procesamiento
-    # Se renombra las columnas para facilitar la lectura y el análisis posterior.
-    df.rename(columns={
-        "P3046": "Tiene_Contador",
-        "P3363": "Medio_Conseguido_Empleo",
-        "P3364": "Le_Descontaron_Retencion",
-        "P6400": "Misma_Empresa_Contratante",
-        "P6450": "Contrato_Verbal_Escrito",
-        "P6460": "Contrato_Termino",
-        "P6920": "Cotiza_Pension",
-        "P6990": "Afiliado_ARP",
-        "P9450": "Afiliado_Caja_Compensacion",
-        "P1800": "Tiene_Empleados",
-        "P1881": "Medio_Transporte_Trabajo",
-        "P1882": "Tiempo_Desplazamiento_Trabajo",
-        "P3047": "Quien_Decide_Horario",
-        "P3048": "Quien_Decide_Produccion",
-        "P3049": "Quien_Decide_Precio",
-        "P3069": "Total_Empleados_Empresa",
-        "P6422": "Conforme_Tipo_Contrato",
-        "P6424S1": "Vacaciones_Con_Sueldo",
-        "P6424S2": "Prima_Navidad",
-        "P6424S3": "Derecho_Cesantia",
-        "P6424S5": "Licencia_Enfermedad_Pagada",
-        "P6426": "Tiempo_Trabajo_Empresa",
-        "P6430": "Tipo_Trabajo",
-        "P6630S1": "Prima_Servicios",
-        "P6630S2": "Prima_Navidad_2",
-        "P6630S3": "Prima_Vacaciones",
-        "P6630S6": "Pagos_Accidentes",
-        "P6800": "Horas_Semanales_Trabajo",
-        "P6880": "Lugar_Principal_Trabajo",
-        "P6915": "Cubrir_Costos_Enfermedad",
-        "P6930": "Fondo_Afiliado",
-        "P6940": "Quien_Paga_Pension",
-        "P7020": "Tuvo_Trabajo_Anterior",
-        "P7130": "Desea_Cambiar_Trabajo",
-        "P7170S6": "Satisfaccion_Jornada_Laboral",
-        "P7240": "Fuente_Ingresos_Sin_Trabajo",
-        "P760": "Meses_Sin_Empleo",
-        "P9440": "Consiguio_Empleo_Internet"
-    }, inplace=True)
+    
+    #8. Recorre el diccionario y renombra las columnas existentes
+    mapping = {col: info["nuevo_nombre"] for col, info in columnas_info.items() if col in df.columns}
+    df.rename(columns=mapping, inplace=True)
+    print(f"🔹 Se renombraron {len(mapping)} columnas.")
+
+    #9. Guardar el DataFrame procesado en la misma ruta donde se encuentra el archivo original.
+    df.to_csv(src_datos_procesados, index=False)
+    print(f"🔹 DataFrame procesado guardado en: {src_datos_procesados}")
 
     return df
 
@@ -372,21 +428,18 @@ def generar_graficos():
 
 
 def main():
-    while True:        
-        if not os.path.exists(src_datos_procesados):
-            df = cargar_datos(src_datos_brutos)
+    df = cargar_datos(src_datos_brutos)
             # Se eliminan las columnas no útiles para el análisis.
-            df.drop(columns=["PERIODO", "MES", "PER", "DIRECTORIO", "SECUENCIA_P", "ORDEN", "HOGAR", "REGIS", "AREA",
-                            'CLASE', 'DPTO', 'FEX_C18', 'FT'], inplace=True, errors='ignore')
-            print("▶ DataFrame cargado y columnas no útiles para análisis eliminadas.")
-
+    df.drop(columns=["PERIODO", "MES", "PER", "DIRECTORIO", "SECUENCIA_P", "ORDEN", "HOGAR", "REGIS", "AREA",
+                    'CLASE', 'DPTO', 'FEX_C18', 'FT'], inplace=True, errors='ignore')
+    print("▶ DataFrame cargado y columnas no útiles para análisis eliminadas.")
+    while True:
         print("\nMenú de Análisis EDA:")
         print("1. Mostrar información general del DataFrame en bruto.")
         print("2. Revisar valores nulos.")
         print("3. Realizar procesamiento avanzado completo.")
-        print("4. Guardar DataFrame actualizado.")
-        print("5. Generar gráficos de relación al DaraFrame procesado.")
-        print("6. Salir.")
+        print("4. Generar gráficos de relación al DaraFrame procesado.")
+        print("5. Salir.")
         
         choice = input("Seleccione una opción: ")
         
@@ -396,12 +449,14 @@ def main():
             mostrar_nulos(df)
         elif choice == "3":
             df = procesar_df(df)
-            print("Procesamiento avanzado completado en un solo paso. 💻")            
+            print("Procesamiento avanzado completado en un solo paso. 💻") 
         elif choice == "4":
-            guardar_df_procesado(df, src_datos_brutos)
+            if "Salario" not in df.columns:
+                print("⚠️ Primero debe procesar el DataFrame para generar gráficos.")
+            else:
+                print("Generando gráficos exploratorios...")
+                generar_graficos()            
         elif choice == "5":
-            generar_graficos()
-        elif choice == "6":
             print("Gracias por usar el programa de análisis EDA. ¡Hasta luego! 👋")
             break
         else:
