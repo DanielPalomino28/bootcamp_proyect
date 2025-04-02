@@ -7,7 +7,7 @@ import os
 import numpy as np
 
 # Carga del dataset preparado
-file_path = r"C:\Users\danie\Documents\Bootcamp\data_prepared.csv"
+file_path = r"C:\Users\DRA01\Downloads\datos_procesados.csv"
 df = pd.read_csv(file_path, low_memory=False)
 print("✅ Archivo cargado correctamente.")
 
@@ -74,6 +74,6 @@ print(f"📌 Precisión del mejor modelo en test: {best_test_accuracy:.2f}")
 # Guardar el mejor modelo en la carpeta "models"
 models_dir = os.path.join(os.getcwd(), "models")
 os.makedirs(models_dir, exist_ok=True)
-model_path = os.path.join(models_dir, "best_random_forest.pkl")
+model_path = os.path.join(models_dir, "best_random_forest_v3.pkl")
 joblib.dump(grid_search.best_estimator_, model_path)
 print(f"✅ Modelo optimizado guardado en: {model_path}")
