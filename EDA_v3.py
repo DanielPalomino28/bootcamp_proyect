@@ -8,8 +8,8 @@ import requests
 import re
 
 # URL del archivo CSV (ruta local en este ejemplo)
-src_datos_brutos = r"C:\Users\DRA01\Downloads\datos_unificados.csv"
-src_datos_procesados = src_datos_brutos.replace("datos_unificados.csv", "datos_procesados.csv") 
+src_datos_brutos = r"Z:\datos_unificados.csv"
+src_datos_procesados = src_datos_brutos.replace("datos_unificados.csv", "datos_procesados_v3.csv") 
 
 def cargar_datos(source, bloques=450000):
     # Carga el dataset en bloques de 450,000 registros
@@ -242,7 +242,7 @@ def procesar_df(df):
                     pass
 
     # 4. Eliminar filas con más de max_vacias celdas vacías (NaN, cadenas vacías o ".").
-    max_vacias = 50 # Número máximo de celdas vacías permitidas por fila. (la mitad del total de columnas en este punto del df)
+    max_vacias = 40 # Número máximo de celdas vacías permitidas por fila. (la mitad del total de columnas en este punto del df)
     empties = df.apply(lambda row: sum(pd.isnull(x) or (isinstance(x, str) and x.strip() in ["", "."]) for x in row), axis=1)
     filas_con_muchos_vacios = empties[empties > max_vacias].index
     if len(filas_con_muchos_vacios) > 0:
@@ -346,13 +346,21 @@ def procesar_df(df):
     '''Rellenar los campos vacíos'''
     # Para columnas numéricas: rellenar con la mediana
     num_cols = df.select_dtypes(include=['number']).columns
-    df[num_cols] = df[num_cols].fillna(df[num_cols].median())
-    print(f"🔹 Campos numéricos vacíos rellenados con la mediana.")
+    for col in num_cols:
+        if col in columnas_info and columnas_info[col]["min"] == 1 and columnas_info[col]["max"] == 4:
+            # Imputar con la moda si los valores están entre 1 y 4 según el diccionario
+            moda = df[col].mode()
+            if not moda.empty:
+                df[col].fillna(moda.iloc[0], inplace=True)                
+        else:
+            # Imputar con la mediana en caso contrario
+            mediana = df[col].median()
+            df[col].fillna(mediana, inplace=True)
 
-    # Para columnas categóricas: rellenar con la moda
+    # Para columnas de texto: rellenar con la moda
     # Seleccionar columnas categóricas
     cat_cols = df.select_dtypes(include=['object']).columns
-    print(f"🔹 Columnas categóricas: {cat_cols}")
+    print(f"🔹 Columnas categóricas: {list(cat_cols)}")
     # Verificar si hay valores en la moda
     mode_values = df[cat_cols].mode()
 
@@ -371,6 +379,26 @@ def procesar_df(df):
     mapping = {col: info["nuevo_nombre"] for col, info in columnas_info.items() if col in df.columns}
     df.rename(columns=mapping, inplace=True)
     print(f"🔹 Se renombraron {len(mapping)} columnas.")
+
+    # 🔹 Definir rangos válidos de valores
+    columnas_info_filtrado = {
+        "Medio_Transporte_Trabajo": {"min": 1, "max": 14},
+        "Lugar_Principal_Trabajo": {"min": 1, "max": 8},
+        "empresa_formal": {"min": 0, "max": 1},
+        "Recibe_Subsidio": {"min": 0, "max": 1},
+        "Recibe_Prima": {"min": 0, "max": 1},
+        "Tipo_Trabajo": {"min": 1, "max": 9},
+        "Salario": {"min": 0, "max": 10000000} 
+    }
+
+    # 🔹 Corregir valores fuera del rango en lugar de eliminarlos
+    for col, info in columnas_info_filtrado.items():
+        if col in df.select_dtypes(include=['float64', 'int64']).columns:  # Verificar que la columna no sea de tipo object
+            fuera_de_rango = df[col].apply(lambda x: x < info["min"] or x > info["max"]).sum()
+            df[col] = df[col].apply(lambda x: np.random.randint(info["min"], info["max"] + 1) if x < info["min"] or x > info["max"] else x)
+            print(f"Columna {col}: {fuera_de_rango} registros corregidos por estar fuera del rango [{info['min']}, {info['max']}].")
+
+    print("\n✅ Valores fuera de rango corregidos con valores aleatorios dentro del rango permitido.")
 
     #9. Guardar el DataFrame procesado en la misma ruta donde se encuentra el archivo original.
     df.to_csv(src_datos_procesados, index=False)
@@ -416,11 +444,12 @@ def generar_graficos():
         plt.show()
         
         
-        # Boxplot: Salario por Tipo de Trabajo
+        # Boxplot: Salario por Tipo de Trabajo (filtrando valores entre 1 y 9)
+        df_filtered = df[df["Tipo_Trabajo"].between(1, 9)]  # Filtrar registros con valores entre 1 y 9
         # Calcular el máximo valor (redondeado hacia arriba) en millones
-        max_salario_millones = int(np.ceil(df["Salario_Millones"].max()))
+        max_salario_millones = int(np.ceil(df_filtered["Salario_Millones"].max()))
         plt.figure(figsize=(12, 6))
-        sns.boxplot(data=df, x="Tipo_Trabajo", y="Salario_Millones")
+        sns.boxplot(data=df_filtered, x="Tipo_Trabajo", y="Salario_Millones")
         plt.title("Distribución del Salario (millones) por Tipo de Trabajo")
         plt.xlabel("Tipo de Trabajo")
         plt.ylabel("Salario (millones)")
@@ -429,13 +458,30 @@ def generar_graficos():
         plt.show()
         
         # Barplot: Salario medio por Lugar Principal de Trabajo
+
+        # Diccionario de mapeo para Lugar_Principal_Trabajo (nombres descriptivos)
+        lugar_trabajo_dict = {
+            1: "En esta vivienda",
+            2: "En otras viviendas",
+            3: "En kiosco - caseta",
+            4: "En un vehículo",
+            5: "De puerta en puerta",
+            6: "Ambulante y estacionario",
+            7: "Local fijo, oficina, fábrica, etc.",
+            8: "En el campo o área rural, mar o río"
+        }
+
+        # Aplicar el mapeo a la columna Lugar_Principal_Trabajo
+        df["Lugar_Principal_Trabajo"] = df["Lugar_Principal_Trabajo"].map(lugar_trabajo_dict)
+
+        # Calcular el salario medio por lugar de trabajo
         salario_medio = df.groupby("Lugar_Principal_Trabajo")["Salario_Millones"].mean().reset_index()
         plt.figure(figsize=(12, 6))
         sns.barplot(data=salario_medio, x="Lugar_Principal_Trabajo", y="Salario_Millones", palette="magma")
         plt.title("Salario Medio (millones) por Lugar Principal de Trabajo")
         plt.xlabel("Lugar Principal de Trabajo")
         plt.ylabel("Salario Medio (millones)")
-        plt.xticks(rotation=45)
+        plt.xticks(rotation=45, ha="right")
         plt.show()
         
         # Boxplot: Salario por Medio de Transporte
