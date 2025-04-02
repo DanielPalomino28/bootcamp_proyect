@@ -8,7 +8,7 @@ import requests
 import re
 
 # URL del archivo CSV (ruta local en este ejemplo)
-src_datos_brutos = r"Z:\datos_unificados.csv"
+src_datos_brutos = r"C:\Users\DRA01\Downloads\datos_unificados.csv"
 src_datos_procesados = src_datos_brutos.replace("datos_unificados.csv", "datos_procesados.csv") 
 
 def cargar_datos(source, bloques=450000):
@@ -129,15 +129,11 @@ def procesar_df(df):
         "P3049": {"nuevo_nombre": "Quien_Decide_Precio", "min": 1, "max": 4},
         "P3069": {"nuevo_nombre": "Total_Empleados_Empresa", "min": 1, "max": 10},
         "P6422": {"nuevo_nombre": "Conforme_Tipo_Contrato", "min": 1, "max": 2},
-        "P6424S1": {"nuevo_nombre": "Vacaciones_Con_Sueldo", "min": 1, "max": 2},
-        "P6424S2": {"nuevo_nombre": "Prima_Navidad", "min": 1, "max": 2},
+        "P6424S1": {"nuevo_nombre": "Vacaciones_Con_Sueldo", "min": 1, "max": 2},        
         "P6424S3": {"nuevo_nombre": "Derecho_Cesantia", "min": 1, "max": 2},
         "P6424S5": {"nuevo_nombre": "Licencia_Enfermedad_Pagada", "min": 1, "max": 2},
         "P6426": {"nuevo_nombre": "Tiempo_Trabajo_Empresa", "min": 0, "max": 720},
         "P6430": {"nuevo_nombre": "Tipo_Trabajo", "min": 1, "max": 9},
-        "P6630S1": {"nuevo_nombre": "Prima_Servicios", "min": 1, "max": 2},
-        "P6630S2": {"nuevo_nombre": "Prima_Navidad_2", "min": 1, "max": 2},
-        "P6630S3": {"nuevo_nombre": "Prima_Vacaciones", "min": 1, "max": 2},
         "P6630S6": {"nuevo_nombre": "Pagos_Accidentes", "min": 1, "max": 2},
         "P6800": {"nuevo_nombre": "Horas_Semanales_Trabajo", "min": 1, "max": 126},
         "P6880": {"nuevo_nombre": "Lugar_Principal_Trabajo", "min": 1, "max": 11},
@@ -212,12 +208,31 @@ def procesar_df(df):
     else:
         print("No se encontraron columnas para consolidar Recibe_Subsidio.")
 
-    
+    '''
+    2.3 Consolidar información de primas en 'Recibe_Prima'
+        P6424S2: Representa la Prima_Navidad, es decir, indica si el trabajador recibe un bono o prima navideña.
+        P6630S1: Representa la Prima_Servicios, que señala si el trabajador recibe un bono por servicios.
+        P6630S2: Representa la Prima_Navidad_2, que puede ser una variante o complemento a la prima navideña.
+        P6630S3: Representa la Prima_Vacaciones, que indica si el trabajador recibe un bono o prima durante las vacaciones.
+    '''
+    prima_cols = ["P6424S2", "P6630S1", "P6630S2", "P6630S3"]
+    cols_existentes_prima = [col for col in prima_cols if col in df.columns]
+    if cols_existentes_prima:
+        # Se asume que 1 = afirmativo, por lo que si en alguna de estas columnas el valor es 1, se considera que recibe prima.
+        df["Recibe_Prima"] = df[cols_existentes_prima].apply(
+            lambda row: 1 if any(x == 1 for x in row if pd.notnull(x)) else 0, axis=1
+        ).astype(int)
+        print("Se consolidó la columna 'Recibe_Prima'.")
+        # Eliminar las columnas originales usadas para la consolidación.
+        df.drop(columns=cols_existentes_prima, inplace=True)
+    else:
+        print("No se encontraron columnas para consolidar 'Recibe_Prima'.")
+
 
     # 3. Recodificar respuestas "no sabe/no responde": valor 9 se reemplaza por NaN.
     # Dado que las respuestas son numéricas (1, 2, 9) o pueden estar vacías.
     for col in df.columns:
-        if col not in ["P6430", "P1881"]: #No se tienen en cuenta las columnas P6430 y P1881, ya que no se requiere recodificación y son categóricas.
+        if col not in ["P6430", "P1881","P6880"]: #No se tienen en cuenta las columnas P6430, P6880 y P1881, ya que no se requiere recodificación y son categóricas.
             if pd.api.types.is_numeric_dtype(df[col]):
                 df[col] = df[col].replace(9, np.nan)
             else:
@@ -367,6 +382,10 @@ def generar_graficos():
     # Mapa de calor de correlaciones
     import seaborn as sns
     import matplotlib.pyplot as plt
+    import numpy as np
+    import os
+    import pandas as pd
+
     if os.path.exists(src_datos_procesados):
         df = pd.read_csv(src_datos_procesados)
         """
@@ -374,7 +393,7 @@ def generar_graficos():
         src_datos_procesados: ruta donde se guardó el DataFrame procesado (se puede usar para titulación o referencia).
         """
         print("Generando gráficos exploratorios con el DataFrame procesado...")
-    
+        
         # Mapa de calor de correlaciones filtrado a las 15 variables con mayor correlación promedio absoluta
         num_cols = df.select_dtypes(include=['float64', 'int64']).columns
         corr_matrix = df[num_cols].corr()
@@ -385,44 +404,73 @@ def generar_graficos():
         plt.title("Mapa de Calor de Correlaciones (Top 15 variables con mayor correlación promedio)")
         plt.show()
         
+        # Convertir el salario a millones para usarlo en los gráficos
+        df["Salario_Millones"] = df["Salario"] / 1_000_000
+
         # Diagrama de dispersión: Salario vs. Horas Semanales de Trabajo, coloreando por Recibe_Subsidio
         plt.figure(figsize=(10, 6))
-        sns.scatterplot(data=df, x="Horas_Semanales_Trabajo", y="Salario", hue="Recibe_Subsidio", palette="viridis", alpha=0.6)
-        plt.title("Salario vs. Horas Semanales de Trabajo")
+        sns.scatterplot(data=df, x="Horas_Semanales_Trabajo", y="Salario_Millones", hue="Recibe_Subsidio", palette="viridis", alpha=0.6)
+        plt.title("Salario (millones) vs. Horas Semanales de Trabajo")
         plt.xlabel("Horas Semanales de Trabajo")
-        plt.ylabel("Salario")
+        plt.ylabel("Salario (millones)")
         plt.show()
         
+        
         # Boxplot: Salario por Tipo de Trabajo
+        # Calcular el máximo valor (redondeado hacia arriba) en millones
+        max_salario_millones = int(np.ceil(df["Salario_Millones"].max()))
         plt.figure(figsize=(12, 6))
-        sns.boxplot(data=df, x="Tipo_Trabajo", y="Salario")
-        plt.title("Distribución del Salario por Tipo de Trabajo")
+        sns.boxplot(data=df, x="Tipo_Trabajo", y="Salario_Millones")
+        plt.title("Distribución del Salario (millones) por Tipo de Trabajo")
         plt.xlabel("Tipo de Trabajo")
-        plt.ylabel("Salario")
+        plt.ylabel("Salario (millones)")
         plt.xticks(rotation=45)
+        plt.yticks(np.arange(1, max_salario_millones + 1, 1))
         plt.show()
         
         # Barplot: Salario medio por Lugar Principal de Trabajo
-        salario_medio = df.groupby("Lugar_Principal_Trabajo")["Salario"].mean().reset_index()
+        salario_medio = df.groupby("Lugar_Principal_Trabajo")["Salario_Millones"].mean().reset_index()
         plt.figure(figsize=(12, 6))
-        sns.barplot(data=salario_medio, x="Lugar_Principal_Trabajo", y="Salario", palette="magma")
-        plt.title("Salario Medio por Lugar Principal de Trabajo")
+        sns.barplot(data=salario_medio, x="Lugar_Principal_Trabajo", y="Salario_Millones", palette="magma")
+        plt.title("Salario Medio (millones) por Lugar Principal de Trabajo")
         plt.xlabel("Lugar Principal de Trabajo")
-        plt.ylabel("Salario Medio")
+        plt.ylabel("Salario Medio (millones)")
         plt.xticks(rotation=45)
         plt.show()
         
         # Boxplot: Salario por Medio de Transporte
+        # Diccionario de mapeo para Medio_Transporte_Trabajo (abreviaciones o nombres breves)
+        transporte_dict = {
+            1: "Bus inter.",
+            2: "Bus urbano",
+            3: "A pie",
+            4: "Metro",
+            5: "Trans. articulado",
+            6: "Taxi",
+            7: "Transp. empresa",
+            8: "Auto particular",
+            9: "Lancha",
+            10: "Caballo",
+            11: "Moto",
+            12: "Mototaxi",
+            13: "Bicicleta",
+            14: "No se desplaza"
+        }
+
+        # Aplicar el mapeo a la columna (suponiendo que los valores ya son numéricos)
+        df["Medio_Transporte_Trabajo"] = df["Medio_Transporte_Trabajo"].map(transporte_dict)
+
         plt.figure(figsize=(10, 6))
-        sns.boxplot(data=df, x="Medio_Transporte_Trabajo", y="Salario", palette="Set2")
-        plt.title("Distribución del Salario por Medio de Transporte")
+        sns.boxplot(data=df, x="Medio_Transporte_Trabajo", y="Salario_Millones", palette="Set2")
+        plt.title("Distribución del Salario (millones) por Medio de Transporte")
         plt.xlabel("Medio de Transporte")
-        plt.ylabel("Salario")
+        plt.ylabel("Salario (millones)")
         plt.show()
-    
+        
         print("Gráficos generados. Revisa las visualizaciones para identificar relaciones importantes.")
     else:
         print(f"⚠️ No se encontró el archivo procesado en la ruta: {src_datos_procesados}.")
+
 
 
 
