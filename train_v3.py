@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report, balanced_accuracy_score
 from sklearn.model_selection import RandomizedSearchCV
 import joblib
 import os
@@ -14,8 +14,9 @@ print("✅ Archivo cargado correctamente.")
 
 # 🔹 Convertir Salario en categorías
 df["Salario_Categoria"] = pd.cut(df["Salario"], 
-                                 bins=[0, 2000000, 5000000, 8000000, 10000000], 
-                                 labels=[0, 1, 2, 3])
+                                 bins=[0, 1500000, 3000000, 5000000, 8000000, 10000000], 
+                                 labels=[0, 1, 2, 3, 4])
+
 
 # 🔹 Definir features y targets
 selected_features = [
@@ -35,11 +36,10 @@ importance_results = {}
 for target in targets:
     print(f"\n🔹 Evaluando importancia de variables para: {target}")
 
-    # Dividir en train/test
+    # Dividir en train/test (asegurando stratificación)
     X_train, X_test, y_train, y_test = train_test_split(df[selected_features], df[target], 
                                                         test_size=0.2, random_state=42, stratify=df[target])
-
-    # Entrenar modelo Random Forest
+    # Entrenar modelo Random Forest para evaluación de importancia
     rf = RandomForestClassifier(random_state=42, n_jobs=-1, class_weight="balanced")
     rf.fit(X_train, y_train)
 
@@ -50,10 +50,9 @@ for target in targets:
     }).sort_values(by="Importance", ascending=False)
 
     importance_results[target] = feature_importances
-
     print(feature_importances)
 
-# 🔹 Entrenar y guardar modelos
+# 🔹 Entrenar y guardar modelos para cada target
 for target in targets:
     print(f"\n🚀 Entrenando modelo para {target}...")
 
@@ -70,14 +69,16 @@ for target in targets:
     }
 
     random_search = RandomizedSearchCV(RandomForestClassifier(random_state=42, class_weight="balanced", n_jobs=-1), 
-                                       param_distributions=param_grid, n_iter=20, cv=5, scoring='accuracy', 
-                                       n_jobs=-1, random_state=42)
+                                       param_distributions=param_grid, n_iter=20, cv=5, 
+                                       scoring='balanced_accuracy', n_jobs=-1, random_state=42)
     random_search.fit(X_train, y_train)
 
     # Evaluación
     y_pred = random_search.best_estimator_.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"📌 Precisión en test para {target}: {accuracy:.2f}")
+    bal_acc = balanced_accuracy_score(y_test, y_pred)
+    print(f"📌 Balanced Accuracy en test para {target}: {bal_acc:.2f}")
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred))
 
     # Guardar modelo
     models_dir = os.path.join(os.getcwd(), "models")
