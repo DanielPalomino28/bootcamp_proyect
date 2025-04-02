@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Predicción de Tipo de Contrato</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body { background-color: #f7f7f7; }
+    .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
+    h1 { color: #333; }
+    footer { margin-top: 40px; text-align: center; color: #777; }
+  </style>
+</head>
+<body>
+<div class="container mt-5">
+  <h1 class="mb-4">Predicción de Tipo de Contrato</h1>
+  <form method="POST">
+    <div class="form-group">
+      <label for="Medio_Transporte_Trabajo">Medio de transporte al trabajo</label>
+      <select class="form-control" name="Medio_Transporte_Trabajo" id="Medio_Transporte_Trabajo" required>
+        {% for key, value in medio_transporte.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="Lugar_Principal_Trabajo">Lugar principal de trabajo</label>
+      <select class="form-control" name="Lugar_Principal_Trabajo" id="Lugar_Principal_Trabajo" required>
+        {% for key, value in lugar_principal.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="empresa_formal">¿La empresa es formal?</label>
+      <select class="form-control" name="empresa_formal" id="empresa_formal" required>
+        {% for key, value in empresa_formal_opts.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="Recibe_Subsidio">¿Recibe subsidio?</label>
+      <select class="form-control" name="Recibe_Subsidio" id="Recibe_Subsidio" required>
+        {% for key, value in recibe_subsidio_opts.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="Recibe_Prima">¿Recibe prima?</label>
+      <select class="form-control" name="Recibe_Prima" id="Recibe_Prima" required>
+        {% for key, value in recibe_prima_opts.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="Tipo_Trabajo">Tipo de trabajo</label>
+      <select class="form-control" name="Tipo_Trabajo" id="Tipo_Trabajo" required>
+        {% for key, value in tipo_trabajo_opts.items() %}
+        <option value="{{ key }}">{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="Horas_Trabajadas">Horas trabajadas por semana</label>
+      <input type="number" class="form-control" name="Horas_Trabajadas" id="Horas_Trabajadas" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Predecir</button>
+  </form>
+  <footer>
+    <small><em> © Bootcamp de Inteligencia Artificial, nivel explorador | Equipo: Daniel * 3 + Juan * 2 </em></small>
+  </footer>
+</div>
+</body>
+</html>

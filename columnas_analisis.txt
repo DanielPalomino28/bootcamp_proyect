@@ -1,0 +1,189 @@
+**1. Comparación y eliminación entre columnas similares**  
+- *P6440 vs P6450*:  
+  - Revisar ambas columnas para determinar cuál de las dos tiene menos valores nulos en todo el DataFrame.  
+  - Eliminar la columna que presente un mayor porcentaje de nulos.
+
+---
+
+**2. Variables relacionadas con beneficios y tiempo trabajado**  
+- Se identifican preguntas sobre:  
+  - Pago de vacaciones  
+  - Licencia pagada por enfermedad  
+  - Derecho a cesantías  
+  - Tiempo trabajado  
+Estos ítems pueden ser muy útiles para el análisis y la predicción, por lo que se deberán conservar y potencialmente integrarlos en un indicador consolidado.
+
+---
+
+**3. Eliminación de registros con alta cantidad de celdas vacías**  
+- Se debe realizar una búsqueda para identificar y eliminar aquellos registros (filas) que tengan más de 100 celdas vacías.
+
+---
+
+**4. Manejo de registros con respuestas "no sabe" o "no responde"**  
+- Se requiere identificar todos los registros en los que la respuesta sea "no sabe" o "no responde".  
+- Evaluar el impacto de estos registros en el modelo:
+  - Se podría optar por eliminarlos si afectan demasiado la calidad del modelo.
+  - O, alternativamente, rellenarlos con una respuesta negativa o incluso asignar una respuesta aleatoria entre "sí" y "no", de acuerdo a las opciones válidas y la distribución de respuestas.
+
+---
+
+**5. Uso de la columna "P6430" (posición ocupacional)**  
+- Esta columna, al parecer sin nulos, es muy potencial para la predicción del salario actual y debe conservarse.
+
+---
+
+**6. Lista de columnas a eliminar**  
+Se propone eliminar las siguientes columnas, ya que se consideran no útiles para el análisis o redundantes:
+- P6410  
+- P6420S2  
+- P6430S1  
+- P3364S1  
+- P6590S1  
+- P6600  
+- P6600S1  
+- P6610S1  
+- P6610  
+- P6585S3A1  
+- P6585S3A2  
+- P6545S1  
+- P6545S2  
+- P6765S1  
+- P3051  
+- P3051S1  
+- P3055S1  
+- P3056  
+- P3057  
+- P6760  
+- P3058S1  
+- P3058S2  
+- P3058S3  
+- P3058S4  
+- P3058S5  
+- P3059  
+- P3061  
+- P3062S1  
+- P3062S2  
+- P3062S3  
+- P3062S4  
+- P3062S5  
+- P3062S6  
+- P3062S7  
+- P3062S8  
+- P3062S9  
+- P3063  
+- P3063S1  
+- P3064  
+- P3064S1  
+- P3067  
+- P3067S1  
+- P3067S2  
+- P6775  
+- P3073  
+- P550  
+- P6780S1  
+- P6810  
+- P6810S1  
+- P6830  
+- P6830S1  
+- P3366  
+- P6880S1  
+- P7028S1  
+- P7045  
+- P7050  
+- P7070  
+- P7075  
+- P7077  
+- P7100  
+- P7110  
+- P7120  
+- P7140S1  
+- P7140S2  
+- P7140S3  
+- P7140S4  
+- P7140S5  
+- P7140S6  
+- P7140S7  
+- P7140S8  
+- P7140S9  
+- P7150  
+- P7160
+
+---
+
+**7. Consolidación de información a partir de columnas similares o relacionadas**  
+Se sugiere crear nuevas variables que consoliden la información de varias columnas:
+  
+- **Registro formal de la empresa**  
+  - Consolidar columnas relacionadas con el registro de la empresa:  
+    - P3045S1: La empresa tiene cámara de comercio  
+    - P3045S2: La empresa tiene Ruth (u otra designación similar)  
+    - P3045S3: La empresa tiene personería jurídica  
+    - P3065: ¿La empresa o negocio en la que se trabaja está registrada ante la cámara de comercio?  
+  - La lógica podría ser: si al menos una de estas columnas indica registro formal, se crea una nueva columna (por ejemplo, "Empresa_Registrada") con valor afirmativo.
+
+- **Recepción de subsidios**  
+  - Consolidar las siguientes columnas relacionadas con subsidios:  
+    - P6585S1: Auxilio o subsidio de alimentación  
+    - P6585S2: Auxilio o subsidio de transporte  
+    - P6585S3: Subsidio familiar  
+    - P6585S4: Subsidio educativo  
+  - Se podría generar una nueva columna que indique si la persona/empresa recibe algún subsidio, o incluso el tipo de subsidio recibido.
+
+- **Aspectos relacionados con condiciones laborales y de seguridad social**  
+  - Incluir variables como:  
+    - P6880: Dónde realiza principalmente su trabajo  
+    - P6920: ¿Está cotizando actualmente a un fondo de pensiones?  
+    - P6940: ¿Quién paga mensualmente por la afiliación al fondo de pensiones?  
+    - P6990: ¿Está afiliado a una aseguradora de riesgos profesionales (ARP)?  
+    - P9450: ¿Está afiliado a una caja de compensación familiar?  
+    - P7020: Antes del actual trabajo, ¿tuvo otro trabajo?  
+    - P760: ¿Cuántos meses estuvo sin empleo entre el trabajo actual y el anterior?  
+    - P7028: En su empleo anterior, ¿era...?  
+  - Estas variables pueden combinarse o usarse de forma complementaria para entender la estabilidad laboral y la seguridad social del individuo.
+
+---
+
+**8. Columnas potenciales para la predicción del salario actual**  
+Las siguientes columnas parecen tener potencial para predecir el salario y deben considerarse en el modelo:  
+- P3046: ¿La empresa o negocio tiene oficina de contabilidad o servicios de contador?  
+- P6500: Antes de descuentos, ¿cuánto ganó el mes pasado en este empleo?  
+- P6510: Ingresos por concepto de horas extras (el mes pasado)  
+- P6580: Bonificaciones mensuales (el mes pasado)  
+- P6640: ¿La semana pasada trabajó horas extras remuneradas?  
+- P1800: ¿Tiene empleados o personas que ayudan en su negocio?  
+- P6750: Ganancia neta o honorarios netos del mes pasado  
+- P6780: Este trabajo es: (tipo o clasificación del trabajo)  
+- P1879: ¿Cuál es la razón principal por la que trabaja de forma independiente?  
+- P6800: ¿Cuántas horas a la semana trabaja normalmente en ese trabajo?  
+- P3069: ¿Cuántas personas en total tiene la empresa o negocio?  
+- P7028: En su empleo anterior, ¿era...?  
+- P1880: ¿Cuál fue la razón principal por la que dejó su empleo anterior?  
+- P7130: ¿Desea cambiar el trabajo que tiene actualmente?  
+- P7240: En caso de no tener trabajo, ¿de dónde obtendría los recursos para sus gastos?  
+
+---
+
+**9. Medio de transporte**  
+- Considerar:  
+  - P1881: ¿Qué medio de transporte utiliza principalmente para desplazarse a su trabajo?  
+  - P1882: ¿Cuánto tiempo se demora normalmente en su desplazamiento (incluyendo tiempo de espera)?
+
+---
+
+**10. Ingresos laborales y actividad económica**  
+- Muy importante incluir:  
+  - La variable de ingresos laborales (INGLABO)  
+  - Rama de actividad principal de la empresa (RAMA2D_R4)
+
+---
+
+**11. Información sobre el informante**  
+- Importante tener en cuenta la metodología de la encuesta:  
+  - Se utiliza informante directo para personas de 18 años o más, y para aquellas de 10 a 17 que trabajen o busquen trabajo.  
+  - Para los demás se acepta un informante idóneo (mayor de 18 años del hogar, que pueda responder correctamente).  
+  - No se acepta información de empleados del servicio doméstico, pensionistas, vecinos o menores, salvo cuando el menor es jefe del hogar o cónyuge.
+
+
+
+
