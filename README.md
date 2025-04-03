@@ -1,7 +1,7 @@
-# 🎯 **Proyecto de Predicción de Tipo de Contrato**
+# 🎯 **Predicción Multiobjetivo en Ámbito Laboral: Modelos de Machine Learning para Clasificar Salario, Formalidad Laboral y Preferencia de Cambio de Empleo**
 
 ### 🧠 **Descripción del Proyecto**
-Este proyecto desarrolla una aplicación web sencilla y elegante utilizando Flask y Bootstrap. Su objetivo principal es predecir el tipo de contrato laboral de una persona, basado en un modelo de Machine Learning entrenado previamente. El modelo ha sido ajustado y simplificado para permitir una interacción rápida y eficiente a través de una interfaz web.
+Este proyecto desarrolla una aplicación web sencilla y elegante utilizando Flask y Bootstrap. Su objetivo principal es predecir las siguientes vaiables: Clasificar Salario, Formalidad Laboral y Preferencia de Cambio de Empleo, basado en un modelo de Machine Learning entrenado previamente. El modelo ha sido ajustado y simplificado para permitir una interacción rápida y eficiente a través de una interfaz web.
 
 ---
 
@@ -15,20 +15,23 @@ Este proyecto desarrolla una aplicación web sencilla y elegante utilizando Flas
 
 ---
 
-### 🗂️ **Estructura del proyecto**
+### 🐂 **Estructura del proyecto**
 
 ```
-/proyecto-prediccion-contrato
+/bootcamp_proyect
 │
-├── app.py                      # Código principal de la aplicación Flask
-├── train_simplified.py         # Script para entrenar el modelo simplificado
-├── simplified_decision_tree_model.pkl # Modelo entrenado guardado
+├── C_APP_v3.py                     # Código principal de la aplicación Flask
+├── B_Train_v3.py                   # Script para entrenar el modelo simplificado
+├── A_EDA_v3.py                     # Script para analisar y realizar limpieza 
+├── models.rar                      # Modelos entrenados que son necesarios para el despliegue (comprimidos)
 │
-├── /templates                  # Plantillas HTML para la interfaz web
-│   ├── index.html              # Página principal (formulario de entrada)
-│   └── result.html             # Página de resultados
+├── /templates                      # Plantillas HTML para la interfaz web
+│   ├── index.html                  # Página principal (formulario de entrada)
+│   └── result.html                 # Página de resultados
 │
-└── README.md                   # Este archivo de documentación
+├── README.md                       # Este archivo de documentación
+└── graficos_v3                     # Carpteta que contiene los gráficos de analisis para el dataset procesado (EDA)
+
 ```
 
 ---
@@ -45,11 +48,10 @@ Desde la raíz del proyecto, ejecuta:
 ```bash
 pip install -r requirements.txt
 ```
-*(Asegúrate de tener un entorno virtual configurado si prefieres aislar las dependencias).*
 
 3️⃣ **Ejecutar la aplicación**  
 ```bash
-python app.py
+python C_APP_v3.py
 ```
 Esto iniciará un servidor local, generalmente en: [http://localhost:5000](http://localhost:5000)
 
@@ -61,7 +63,7 @@ Esto iniciará un servidor local, generalmente en: [http://localhost:5000](http:
 El usuario completa un formulario con opciones predefinidas (selectores), garantizando que los datos sean válidos y coherentes.
 
 2️⃣ **Predicción**  
-Al enviar el formulario, los datos ingresados se procesan y se pasan al modelo cargado (`simplified_decision_tree_model.pkl`).
+Al enviar el formulario, los datos ingresados se procesan y se pasan a los modelos cargados (descomprimir `models.rar`).
 
 3️⃣ **Resultado**  
 La app devuelve la predicción del tipo de contrato ("Verbal", "Escrito" o "No sabe/No responde") en una página amigable.
@@ -86,13 +88,3 @@ Proyecto desarrollado por el equipo:
 
 ---
 
-### 📌 **Posibles mejoras futuras**
-- ✅ Agregar validación de errores más detallada.
-- ✅ Permitir subir archivos CSV para predicción masiva.
-- ✅ Implementar visualización gráfica de resultados.
-- ✅ Desplegar la aplicación en un servidor (Heroku, Render, etc.).
-
----
-
-¿Listo para predecir contratos? 🎯✨  
-Siéntete libre de personalizar la app y agregar más funcionalidades. 💪✨

@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # Cargar modelos entrenados (ajusta las rutas según corresponda)
-base_model_path = r"C:\Users\danie\bootcamp_proyect\models"
+base_model_path = r"C:\Users\DRA01\Desktop\bootcamp_proyect\models"
 model_salario_cat = joblib.load(os.path.join(base_model_path, "best_random_forest_Salario_Categoria.pkl"))
 model_empresa_formal = joblib.load(os.path.join(base_model_path, "best_random_forest_empresa_formal.pkl"))
 model_desea_cambiar = joblib.load(os.path.join(base_model_path, "best_random_forest_Desea_Cambiar_Trabajo.pkl"))
