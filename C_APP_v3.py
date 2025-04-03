@@ -83,8 +83,8 @@ empresa_formal_mapping = {
     2: "No"
 }
 desea_cambiar_mapping = {
-    0: "No desea cambiar de trabajo",
-    1: "Desea cambiar de trabajo"
+    1: "Desea cambiar de trabajo",
+    2: "No desea cambiar de trabajo"    
 }
 
 @app.route("/", methods=["GET", "POST"])
@@ -98,7 +98,7 @@ def index():
             "Recibe_Subsidio": int(request.form["Recibe_Subsidio"]),
             "Recibe_Prima": int(request.form["Recibe_Prima"]),
             "Tipo_Trabajo": int(request.form["Tipo_Trabajo"]),
-            "Horas_Trabajadas": float(request.form["Horas_Trabajadas"])
+            "Horas_Semanales_Trabajo": float(request.form["Horas_Trabajadas"])
         }
         # Convertir el input a DataFrame para que tenga la misma estructura que en el entrenamiento
         input_df = pd.DataFrame([input_data])

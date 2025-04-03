@@ -28,8 +28,7 @@ selected_features = [
     "Tipo_Trabajo",
     "Horas_Semanales_Trabajo"
 ]
-targets = ["Salario_Categoria"]
-# targets = ["Salario_Categoria", "empresa_formal", "Desea_Cambiar_Trabajo"]
+targets = ["Salario_Categoria", "empresa_formal", "Desea_Cambiar_Trabajo"]
 
 # 🔹 Evaluar la importancia de las columnas para cada target
 importance_results = {}
